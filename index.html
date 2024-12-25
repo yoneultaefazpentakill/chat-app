@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Online</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .setup-container, .chat-container {
+            width: 80%;
+            max-width: 800px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .setup-container h2, .chat-container h2 {
+            text-align: center;
+        }
+        .setup-container input {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .setup-container button {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease-in-out;
+        }
+        .setup-container button:hover {
+            background: linear-gradient(90deg, #0056b3, #003d7a);
+        }
+        .chat-messages {
+            height: 300px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        .chat-input {
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-input input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+        .chat-input span {
+            font-size: 14px;
+            color: #888;
+            align-self: flex-end;
+        }
+        .message {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        .profile-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .message-text {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 5px;
+            word-wrap: break-word;
+            max-width: 75%;
+        }
+        .message-text strong {
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Configuração Inicial -->
+    <div class="setup-container" id="setup-container">
+        <h2>Configurar Perfil</h2>
+        <label for="profile-pic">Foto de Perfil:</label>
+        <input type="file" id="profile-pic" accept="image/*">
+        <label for="username">Nome:</label>
+        <input type="text" id="username" placeholder="Digite seu nome...">
+        <button id="start-chat">Entrar no Chat</button>
+    </div>
+
+    <!-- Área do Chat -->
+    <div class="chat-container" id="chat-container" style="display: none;">
+        <h2>Chat Online</h2>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input">
+            <input type="text" id="chat-input" placeholder="Digite uma mensagem...">
+            <span id="char-count">0/200</span>
+            <input type="file" id="chat-photo" accept="image/*">
+        </div>
+    </div>
+
+    <script>
+        const setupContainer = document.getElementById('setup-container');
+        const chatContainer = document.getElementById('chat-container');
+        const messagesDiv = document.getElementById('chat-messages');
+        const inputField = document.getElementById('chat-input');
+        const charCount = document.getElementById('char-count');
+        const profilePicInput = document.getElementById('profile-pic');
+        const usernameInput = document.getElementById('username');
+        const chatPhoto = document.getElementById('chat-photo');
+        const startChatButton = document.getElementById('start-chat');
+
+        let profilePic = '';
+        let username = 'Anônimo';
+
+        // Configuração inicial
+        startChatButton.addEventListener('click', () => {
+            username = usernameInput.value.trim() || 'Anônimo';
+
+            const file = profilePicInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    profilePic = reader.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            setupContainer.style.display = 'none';
+            chatContainer.style.display = 'block';
+        });
+
+        // Atualizar contador de caracteres
+        inputField.addEventListener('input', () => {
+            const currentLength = inputField.value.length;
+            charCount.textContent = `${currentLength}/200`;
+            if (currentLength > 200) {
+                inputField.value = inputField.value.slice(0, 200);
+                charCount.textContent = '200/200';
+            }
+        });
+
+        // Adicionar mensagem ao chat
+        const addMessage = (message, isPhoto = false) => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+
+            const imgElement = document.createElement('img');
+            imgElement.classList.add('profile-pic');
+            imgElement.src = profilePic || 'https://via.placeholder.com/40';
+
+            const textElement = document.createElement('div');
+            textElement.classList.add('message-text');
+
+            if (isPhoto) {
+                const img = document.createElement('img');
+                img.src = message;
+                img.style.maxWidth = '100%';
+                img.style.borderRadius = '5px';
+                textElement.appendChild(img);
+            } else {
+                textElement.innerHTML = `<strong>${username}:</strong> ${message}`;
+            }
+
+            messageElement.appendChild(imgElement);
+            messageElement.appendChild(textElement);
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll para baixo automaticamente
+        };
+
+        // Enviar mensagem com botão ou "Enter"
+        const sendMessage = () => {
+            const message = inputField.value.trim();
+            if (message) {
+                addMessage(message);
+                inputField.value = '';
+                charCount.textContent = '0/200';
+            }
+
+            const file = chatPhoto.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    addMessage(reader.result, true);
+                };
+                reader.readAsDataURL(file);
+                chatPhoto.value = ''; // Limpar após enviar
+            }
+        };
+
+        inputField.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+
+</body>
+</html>
